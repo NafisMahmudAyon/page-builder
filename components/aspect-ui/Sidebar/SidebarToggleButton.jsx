@@ -11,13 +11,14 @@ export const SidebarToggleButton = ({
   variant = 'default',
   size = 'medium',
   icon = <Menu />,
+  id=1,
   ...rest
 }) => {
   const { toggleSidebar } = useSidebar()
 
   return (
     <Button
-      onClick={toggleSidebar}
+      onClick={()=>toggleSidebar(id)}
       className={cn(className)}
       variant={variant}
       size={size}

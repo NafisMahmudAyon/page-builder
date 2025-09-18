@@ -24,7 +24,7 @@ export const DropdownItem = ({
       <a
         href='#'
         className={cn(
-          'hover:bg-bg-light/80 block text-nowrap px-4 py-2 text-sm',
+          'hover:bg-bg-light/80 block text-nowrap px-4 py-2 text-sm rounded-md',
           className,
           isSelected ? cn('bg-bg-light', activeClassName) : ''
         )}
@@ -41,7 +41,7 @@ export const DropdownItem = ({
   return (
     <div
       className={cn(
-        'hover:bg-bg-light/80 block text-nowrap px-4 py-2 text-sm',
+        'hover:bg-bg-light/80 block text-nowrap px-4 py-2 text-sm rounded-md',
         className,
         isSelected ? cn('bg-bg-light', activeClassName) : ''
       )}

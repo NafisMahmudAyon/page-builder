@@ -6,14 +6,21 @@ const SidebarContext = createContext(undefined)
 
 export const SidebarProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [isOpen2, setIsOpen2] = useState(false)
+  const id = 1
 
-  const toggleSidebar = () => {
+  const toggleSidebar = (id=1) => {
+    if (id === 1) {
     setIsOpen(prev => !prev)
+    } else {
+    setIsOpen2(prev => !prev)
+    }
   }
   const closeSidebar = () => setIsOpen(false)
+  const closeSidebar2 = () => setIsOpen2(false)
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, closeSidebar }}>
+    <SidebarContext.Provider value={{ isOpen, isOpen2, toggleSidebar, closeSidebar, closeSidebar2 }}>
       {children}
     </SidebarContext.Provider>
   )

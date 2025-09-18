@@ -27,7 +27,7 @@ export const DropdownContent = ({ children, className = '', ...rest }) => {
 
   return (
     <div
-      className={cn('bg-bg absolute z-10 rounded-md', positionClass, className)}
+      className={cn('bg-bg absolute z-10 overflow-hidden rounded-md p-1 py-1.5 flex flex-col gap-1', positionClass, className)}
       ref={contentRef}
       role='presentation'
       {...rest}
