@@ -2,8 +2,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { templates } from "./templates";
 import { usePathname } from "next/navigation";
-import { io } from "socket.io-client";
-let socket;
 
 
 const EditorContext = createContext(null)
@@ -72,28 +70,6 @@ export const EditorProvider = ({
 	const [responsiveBlock, setResponsiveBlock] = useState(blocks);
 	const [draggedTemplate, setDraggedTemplate] = useState(null);
 	const [loading, setLoading] = useState(true)
-
-	useEffect(() => {
-		const token = localStorage.getItem("token");
-		socket = io(
-			process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
-			{
-				auth: { token },
-			}
-		);
-
-		return () => socket.disconnect();
-	}, []);
-
-	const broadcastUpdate = (blocks) => {
-		if (socket && pageId) {
-			socket.emit("page-update", {
-				pageId,
-				blocks,
-				operation: "edit",
-			});
-		}
-	};
 
 	useEffect(() => {
 		const updateClassNames = (blocks) => {

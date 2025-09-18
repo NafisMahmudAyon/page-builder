@@ -1,15 +1,16 @@
 "use client";
 
 import { LayoutPanelLeft, Settings } from "lucide-react";
-import Script from "next/script";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import { Spinner } from "../../../components/aspect-ui";
 import { SidebarToggleButton } from "../../../components/aspect-ui/Sidebar/SidebarToggleButton";
 import LeftBar from "../../../components/LeftBar";
 import MainContent from "../../../components/MainContent";
 import OptionsPanel from "../../../components/OptionsPanel";
 import useEditor from "../../../context/EditorContext";
+import { DotLoader } from "../../../components/Loader";
+import { Spinner } from "../../../components/aspect-ui";
+import Script from "next/script";
 
 let socket;
 
@@ -17,7 +18,7 @@ export default function ClientPage({ id }) {
 	const [content, setContent] = useState("");
 	const [connectedUsers, setConnectedUsers] = useState([]);
 	const pageId = id;
-	const { setPageId, loading, setBlocks } = useEditor();
+	const { setPageId, loading } = useEditor();
 
 	useEffect(() => {
 		setPageId(pageId);
@@ -49,13 +50,13 @@ export default function ClientPage({ id }) {
 		// Initial page state sync
 		socket.on("page-state-sync", (state) => {
 			console.log("📥 Page state synced:", state);
-			if (state.blocks) setBlocks(state.blocks);
+			setContent(JSON.stringify(state.blocks, null, 2)); // for demo: show blocks as text
 		});
 
 		// Page updated by others
 		socket.on("page-updated", (update) => {
 			console.log("📥 Page updated:", update);
-			if (update.blocks) setBlocks(update.blocks);
+			setContent(JSON.stringify(update.blocks, null, 2));
 		});
 
 		// User list updates
