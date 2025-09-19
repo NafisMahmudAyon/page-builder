@@ -2,12 +2,12 @@
 
 import { LayoutPanelLeft, Settings } from "lucide-react";
 import Script from "next/script";
-import { Spinner } from "../../../components/aspect-ui";
-import { SidebarToggleButton } from "../../../components/aspect-ui/Sidebar/SidebarToggleButton";
-import LeftBar from "../../../components/LeftBar";
-import MainContent from "../../../components/MainContent";
-import OptionsPanel from "../../../components/OptionsPanel";
-import useEditor from "../../../context/EditorContext";
+import { Spinner } from "../../../../components/aspect-ui";
+import { SidebarToggleButton } from "../../../../components/aspect-ui/Sidebar/SidebarToggleButton";
+import LeftBar from "../../../../components/LeftBar";
+import MainContent from "../../../../components/MainContent";
+import OptionsPanel from "../../../../components/OptionsPanel";
+import useEditor from "../../../../context/EditorContext";
 
 export default function ClientPage() {
 	const { setPageId, loading, connectedUsers, isSocketConnected, blocks } =

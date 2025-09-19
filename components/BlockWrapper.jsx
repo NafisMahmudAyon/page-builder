@@ -1,18 +1,23 @@
 "use client";
 
 import useEditor from "../context/EditorContext";
-import { cn } from "./utils/cn";
-import React from "react";
 import { Heading } from "./Blocks/Heading";
+import { Image } from "./Blocks/Image";
 import { Text } from "./Blocks/Text";
 import Container from "./Container";
-import { Image } from "./Blocks/Image";
-import { CollaborationIndicators } from "./CollaborationIndicators";
-
+import { cn } from "./utils/cn";
 
 const BlockWrapper = ({ block }) => {
-  const { selected, setSelected, selectedType, setSelectedType, responsive, responsiveBlock, findBlockById } = useEditor();
-  return (
+	const {
+		selected,
+		setSelected,
+		selectedType,
+		setSelectedType,
+		responsive,
+		responsiveBlock,
+		findBlockById,
+	} = useEditor();
+	return (
 		<>
 			{/* <CollaborationIndicators blockId={block.id} /> */}
 			{block.type === "heading" && (

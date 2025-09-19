@@ -1,24 +1,22 @@
-'use client'
+"use client";
 import useEditor from "../context/EditorContext";
-import React from "react";
-import { ReactSortable } from "react-sortablejs";
 import BlockWrapper from "./BlockWrapper";
 
 const parentSortableOptions = {
-  animation: 150,
-  fallbackOnBody: true,
-  swapThreshold: 0.65,
-  group: "parent-group",
+	animation: 150,
+	fallbackOnBody: true,
+	swapThreshold: 0.65,
+	group: "parent-group",
 };
 
 const MainContent = () => {
-  const { blocks, handleBlockUpdate, responsive } = useEditor();
+	const { blocks, handleBlockUpdate, responsive } = useEditor();
 
-  const handleSortableUpdate = (newState) => {
-    handleBlockUpdate(newState, null);
-  };
+	const handleSortableUpdate = (newState) => {
+		handleBlockUpdate(newState, null);
+	};
 
-  return (
+	return (
 		<div className="flex-1 p-6 ">
 			<div
 				className={`bg-bg rounded-lg shadow-sm max-h-[calc(100vh-124px)] overflow-auto lite-scrollbar border border-border p-6 @container ${

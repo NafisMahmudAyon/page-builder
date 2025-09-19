@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "../components/aspect-ui/aspect-ui.css";
 
+@custom-variant dark (&:is(.dark *));
+
 .lite-scrollbar {
 	scrollbar-width: thin;
 	scrollbar-color: var(--bg-light) var(--bg);

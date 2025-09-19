@@ -1,39 +1,39 @@
 import { FoldVertical, Heading1, Image, List, PencilLine, SquareDashed, Type } from "lucide-react";
 
 export const templates = [
-	{
-		id: 0,
-		type: "list",
-		label: "List",
-		content: "Creative Director",
-		options: {
-			editor: {
-				icon: List,
-			},
-		},
-	},
-	{
-		id: 0,
-		type: "iconBlock",
-		label: "Icon Block",
-		content: "Creative  Studio LLC",
-		options: {
-			editor: {
-				icon: PencilLine,
-			},
-		},
-	},
-	{
-		id: 0,
-		type: "divider",
-		label: "Divider",
-		content: "https://createllc.com",
-		options: {
-			editor: {
-				icon: FoldVertical,
-			},
-		},
-	},
+	// {
+	// 	id: 0,
+	// 	type: "list",
+	// 	label: "List",
+	// 	content: "Creative Director",
+	// 	options: {
+	// 		editor: {
+	// 			icon: List,
+	// 		},
+	// 	},
+	// },
+	// {
+	// 	id: 0,
+	// 	type: "iconBlock",
+	// 	label: "Icon Block",
+	// 	content: "Creative  Studio LLC",
+	// 	options: {
+	// 		editor: {
+	// 			icon: PencilLine,
+	// 		},
+	// 	},
+	// },
+	// {
+	// 	id: 0,
+	// 	type: "divider",
+	// 	label: "Divider",
+	// 	content: "https://createllc.com",
+	// 	options: {
+	// 		editor: {
+	// 			icon: FoldVertical,
+	// 		},
+	// 	},
+	// },
 	{
 		id: 0,
 		type: "heading",

@@ -3,13 +3,12 @@
 import { LayoutPanelLeft, Settings, Users, Wifi, WifiOff } from "lucide-react";
 import Script from "next/script";
 import { useEffect, useState } from "react";
-import { Button, Spinner } from "../../../components/aspect-ui";
-import { SidebarToggleButton } from "../../../components/aspect-ui/Sidebar/SidebarToggleButton";
-import LeftBar from "../../../components/LeftBar";
-import MainContent from "../../../components/MainContent";
-import OptionsPanel from "../../../components/OptionsPanel";
-import useEditor from "../../../context/EditorContext";
-import { useCollaboration } from "../../../hooks/useCollaboration";
+import { Button, Spinner } from "../../../../components/aspect-ui";
+import { SidebarToggleButton } from "../../../../components/aspect-ui/Sidebar/SidebarToggleButton";
+import LeftBar from "../../../../components/LeftBar";
+import MainContent from "../../../../components/MainContent";
+import OptionsPanel from "../../../../components/OptionsPanel";
+import useEditor from "../../../../context/EditorContext";
 
 export default function ClientPage({ id }) {
 	const pageId = id;

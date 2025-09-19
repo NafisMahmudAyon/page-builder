@@ -59,7 +59,7 @@ const Page = () => {
 	};
 
 	return (
-		<div>
+		<div className="min-h-screen">
 			<h1>Login</h1>
 			<form onSubmit={handleSubmit}>
 				<input

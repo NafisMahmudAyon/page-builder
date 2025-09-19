@@ -23,7 +23,7 @@ export default function Home() {
 	}, []);
 
 	return (
-		<div className="">
+		<div className="dark min-h-screen bg-bg-dark text-text">
 			<Nav />
 			<div className="grid grid-cols-3 gap-4 my-4 px-4">
 				{pages.map((page) => (

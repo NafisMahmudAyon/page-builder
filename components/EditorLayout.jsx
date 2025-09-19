@@ -10,6 +10,7 @@ import {
 	Input,
 	useToast,
 } from "./aspect-ui";
+import Link from "next/link";
 
 const EditorLayout = ({ children }) => {
 	const {
@@ -50,7 +51,7 @@ const EditorLayout = ({ children }) => {
 	return (
 		<div className="flex flex-col ">
 			<div className="w-full h-16 flex items-center border-b gap-2 border-border px-4">
-				<div>Aspect Editor</div>
+				<div><Link href={"/"}>Editor</Link></div>
 				<div className="flex-1 flex justify-center items-center gap-2">
 					<Input
 						value={name}
