@@ -15,6 +15,7 @@ export default function ClientPage({ id }) {
 	const pageId = id;
 	const { setPageId, loading, connectedUsers, isSocketConnected, blocks } =
 		useEditor();
+		console.log(blocks)
 
 	const [showCollaborators, setShowCollaborators] = useState(false);
 
@@ -74,7 +75,7 @@ export default function ClientPage({ id }) {
 	const CollaboratorsButton = () => (
 		<Button variant="outline"
 			onClick={() => setShowCollaborators(!showCollaborators)}
-			className={`fixed bottom-4 right-4 z-50 rounded-lg text-sm font-medium transition-colors ${
+			className={`fixed bg-bg-dark hover:bg-bg bottom-4 right-4 z-50 rounded-lg text-sm font-medium transition-colors ${
 				connectedUsers.length > 0
 					? "text-text"
 					: "text-text-muted"
@@ -87,12 +88,12 @@ export default function ClientPage({ id }) {
 
 	return (
 		<>
-			<div className="flex h-full justify-between relative">
+			<div className="flex min-h-full justify-between relative">
 				{loading && (
 					<div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-bg-dark/50 z-50 backdrop-blur-sm">
 						<div className="flex flex-col items-center gap-4">
 							<Spinner className="w-8 h-8" />
-							<span className="text-white font-medium">Loading editor...</span>
+							<span className="text-text font-medium">Loading editor...</span>
 						</div>
 					</div>
 				)}

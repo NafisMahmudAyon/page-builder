@@ -9,12 +9,14 @@ import {
 } from "react";
 import { io } from "socket.io-client";
 import { templates } from "./templates";
+import { useToast } from "../components/aspect-ui";
 
 const EditorContext = createContext(null);
 
 let socket;
 
 export const EditorProvider = ({ children }) => {
+	const { toast, ToastContainer } = useToast();
 	const path = usePathname();
 	const [selected, setSelected] = useState(null);
 	const [selectedType, setSelectedType] = useState(null);
@@ -462,6 +464,10 @@ export const EditorProvider = ({ children }) => {
 				});
 			}
 
+			toast({
+				message: "Page saved successfully",
+				type: "success",
+			});
 			console.log("✅ Page saved successfully");
 		} catch (error) {
 			console.error("❌ Error saving page:", error);
@@ -555,6 +561,7 @@ export const EditorProvider = ({ children }) => {
 				socket,
 			}}>
 			{children}
+			<ToastContainer />
 		</EditorContext.Provider>
 	);
 };

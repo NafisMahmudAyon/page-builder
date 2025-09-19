@@ -1,22 +1,54 @@
-'use client'
-import { Plus } from "lucide-react";
+"use client";
+import { ArrowUpFromLine, Plus } from "lucide-react";
 import useEditor from "../context/EditorContext";
-import { Button, Dropdown, DropdownAction, DropdownContent, DropdownItem, Input } from "./aspect-ui";
+import {
+	Button,
+	Dropdown,
+	DropdownAction,
+	DropdownContent,
+	DropdownItem,
+	Input,
+	useToast,
+} from "./aspect-ui";
 
 const EditorLayout = ({ children }) => {
-  const { page, name, slug, status, editorData, setEditorData, setPage, setPageId, setSlug, setStatus, setName, handleSave, responsive, setResponsive } = useEditor()
-  const statusList = [
-    { value: "published", label: "Published" },
-    { value: "draft", label: "Draft" },
-  ]
-  const responsiveList = [
-    { value: "sm", label: "Small" },
-    { value: "md", label: "Medium" },
-    { value: "lg", label: "Large" },
-    { value: "xl", label: "Extra Large" },
-  ]
-  return (
-		<div className="max-h-screen flex flex-col overflow-hidden">
+	const {
+		page,
+		name,
+		slug,
+		status,
+		editorData,
+		setEditorData,
+		setPage,
+		setPageId,
+		setSlug,
+		setStatus,
+		setName,
+		handleSave,
+		responsive,
+		setResponsive,
+		blocks,
+	} = useEditor();
+	const { toast, ToastContainer } = useToast();
+	const statusList = [
+		{ value: "published", label: "Published" },
+		{ value: "draft", label: "Draft" },
+	];
+	const responsiveList = [
+		{ value: "sm", label: "Small" },
+		{ value: "md", label: "Medium" },
+		{ value: "lg", label: "Large" },
+		{ value: "xl", label: "Extra Large" },
+	];
+	const handleCopy = () => {
+		window.navigator.clipboard.writeText(JSON.stringify(blocks));
+		toast({
+			message: "Copied to clipboard",
+			type: "success",
+		});
+	};
+	return (
+		<div className="flex flex-col ">
 			<div className="w-full h-16 flex items-center border-b gap-2 border-border px-4">
 				<div>Aspect Editor</div>
 				<div className="flex-1 flex justify-center items-center gap-2">
@@ -84,16 +116,20 @@ const EditorLayout = ({ children }) => {
 						<option value="xl">Extra Large</option>
 					</select> */}
 				</div>
-				<div>
+				<div className="flex items-center gap-2">
+					<Button variant="outline" onClick={handleCopy}>
+						<ArrowUpFromLine />
+					</Button>
 					<Button className="flex items-center gap-2" onClick={handleSave}>
 						<Plus className="size-5" />
 						Save Page
 					</Button>
 				</div>
 			</div>
-			<div className="h-[calc(100vh-50px)]">{children}</div>
+			<div className="min-h-[calc(100vh-100px)]">{children}</div>
+			<ToastContainer />
 		</div>
 	);
-}
+};
 
-export default EditorLayout
+export default EditorLayout;

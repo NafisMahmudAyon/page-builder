@@ -9,18 +9,10 @@ const LeftBar = () => {
 	const {
 		elementTemplates,
 		setDraggedTemplate,
-		handleSave,
-		name,
-		slug,
-		status,
-		setName,
-		setSlug,
-		setStatus,
 	} = useEditor();
 	const { closeSidebar } = useSidebar();
 	return (
-		<div>
-			<Sidebar className="left-0	">
+			<Sidebar className="left-0 h-[calc(100vh-120px)] my-6 ml-2 rounded-lg border-border border">
 				<div className="lg:hidden" onClick={closeSidebar}>
 					<X />
 				</div>
@@ -58,7 +50,6 @@ const LeftBar = () => {
 					</TabContent>
 				</Tabs>
 			</Sidebar>
-		</div>
 	);
 };
 
