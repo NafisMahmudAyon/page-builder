@@ -15,7 +15,6 @@ export default function ClientPage({ id }) {
 	const pageId = id;
 	const { setPageId, loading, connectedUsers, isSocketConnected, blocks } =
 		useEditor();
-		console.log(connectedUsers)
 
 	const [showCollaborators, setShowCollaborators] = useState(false);
 	const { recentActivity } = useCollaboration()
