@@ -1,182 +1,268 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import io from "socket.io-client";
+// hooks/useCollaboration.js
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import useEditor from "../context/EditorContext";
 
-export const useCollaboration = (pageId, userId, userToken) => {
-	const [socket, setSocket] = useState(null);
-	const [activeUsers, setActiveUsers] = useState([]);
-	const [pageState, setPageState] = useState({ blocks: [], version: 0 });
-	const [selectedBlocks, setSelectedBlocks] = useState(new Map());
-	const [cursors, setCursors] = useState(new Map());
-	const [isConnected, setIsConnected] = useState(false);
+export const useCollaboration = () => {
+	const { connectedUsers, isSocketConnected, socket, blocks, pageId } =
+		useEditor();
 
-	const lastUpdateRef = useRef(0);
-	const pendingUpdatesRef = useRef([]);
+	const [recentActivity, setRecentActivity] = useState([]);
+	const [isTyping, setIsTyping] = useState(new Map()); // userId -> isTyping
+	const [cursors, setCursors] = useState(new Map()); // userId -> cursor position
 
+	// Track typing indicators
 	useEffect(() => {
-		// if (!pageId || !userToken) return;
+		if (!socket) return;
 
-    
+		const handleTypingStart = (data) => {
+			setIsTyping(
+				(prev) =>
+					new Map(
+						prev.set(data.userId, {
+							blockId: data.blockId,
+							timestamp: Date.now(),
+							user: data.user,
+						})
+					)
+			);
+		};
 
-		// Initialize socket connection
-		const newSocket = io(
-			process.env.REACT_APP_WEBSOCKET_URL || "http://localhost:5000",
-			{
-				auth: { token: userToken },
-			}
-		);
-
-		newSocket.on("connect", () => {
-			console.log("Connected to collaboration server");
-			setIsConnected(true);
-			newSocket.emit("join-page", pageId);
-		});
-
-		newSocket.on("disconnect", () => {
-			setIsConnected(false);
-		});
-
-		// Handle incoming updates
-		newSocket.on("page-updated", (data) => {
-			const { blocks, userId: senderId, version } = data;
-
-			// Avoid processing our own updates
-			if (senderId !== userId && version > lastUpdateRef.current) {
-				setPageState((prev) => ({
-					blocks,
-					version,
-					lastModifiedBy: data.userName,
-				}));
-				lastUpdateRef.current = version;
-			}
-		});
-
-		newSocket.on("page-state-sync", (state) => {
-			setPageState(state);
-			lastUpdateRef.current = state.version;
-		});
-
-		newSocket.on("users-updated", (users) => {
-			setActiveUsers(users);
-		});
-
-		newSocket.on("block-selection-changed", (data) => {
-			const { blockId, userId: senderId, action } = data;
-
-			setSelectedBlocks((prev) => {
-				const updated = new Map(prev);
-				if (action === "select") {
-					updated.set(blockId, senderId);
-				} else {
-					updated.delete(blockId);
-				}
-				return updated;
+		const handleTypingStop = (data) => {
+			setIsTyping((prev) => {
+				const newMap = new Map(prev);
+				newMap.delete(data.userId);
+				return newMap;
 			});
-		});
+		};
 
-		newSocket.on("cursor-updated", (data) => {
-			const { userId: senderId, x, y, userName } = data;
-			setCursors((prev) => new Map(prev.set(senderId, { x, y, userName })));
-		});
+		const handleCursorMove = (data) => {
+			setCursors(
+				(prev) =>
+					new Map(
+						prev.set(data.userId, {
+							blockId: data.blockId,
+							position: data.position,
+							user: data.user,
+							timestamp: Date.now(),
+						})
+					)
+			);
+		};
 
-		newSocket.on("text-changed", (data) => {
-			const { blockId, content, userId: senderId } = data;
-			// Handle real-time text updates
-			setPageState((prev) => ({
-				...prev,
-				blocks: prev.blocks.map((block) =>
-					updateBlockContent(block, blockId, content)
-				),
-			}));
-		});
-
-		setSocket(newSocket);
+		socket.on("user-typing-start", handleTypingStart);
+		socket.on("user-typing-stop", handleTypingStop);
+		socket.on("cursor-moved", handleCursorMove);
 
 		return () => {
-			newSocket.disconnect();
+			socket.off("user-typing-start", handleTypingStart);
+			socket.off("user-typing-stop", handleTypingStop);
+			socket.off("cursor-moved", handleCursorMove);
 		};
-	}, [pageId, userToken, userId]);
+	}, [socket]);
 
-	const updateBlockContent = (block, targetId, content) => {
-		if (block.id === targetId) {
-			return { ...block, content };
-		}
-		if (block.children) {
+	// Clean up old typing indicators
+	useEffect(() => {
+		const interval = setInterval(() => {
+			const now = Date.now();
+			const timeout = 3000; // 3 seconds
+
+			setIsTyping((prev) => {
+				const newMap = new Map();
+				for (const [userId, data] of prev.entries()) {
+					if (now - data.timestamp < timeout) {
+						newMap.set(userId, data);
+					}
+				}
+				return newMap;
+			});
+
+			setCursors((prev) => {
+				const newMap = new Map();
+				for (const [userId, data] of prev.entries()) {
+					if (now - data.timestamp < 10000) {
+						// 10 seconds for cursors
+						newMap.set(userId, data);
+					}
+				}
+				return newMap;
+			});
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	// Track page updates and add to activity log
+	useEffect(() => {
+		if (!socket) return;
+
+		const handlePageUpdate = (update) => {
+			setRecentActivity((prev) => {
+				const newActivity = {
+					id: Date.now(),
+					type: update.operation || "update",
+					blockId: update.blockId,
+					userId: update.metadata?.userId,
+					user: update.updatedBy?.user,
+					timestamp: Date.now(),
+					metadata: update.metadata,
+				};
+
+				return [newActivity, ...prev.slice(0, 19)]; // Keep last 20 activities
+			});
+		};
+
+		socket.on("page-updated", handlePageUpdate);
+
+		return () => {
+			socket.off("page-updated", handlePageUpdate);
+		};
+	}, [socket]);
+
+	// Emit typing indicators
+	const emitTypingStart = useCallback(
+		(blockId) => {
+			if (socket && isSocketConnected) {
+				socket.emit("typing-start", {
+					pageId,
+					blockId,
+					user: JSON.parse(localStorage.getItem("user") || "{}"),
+				});
+			}
+		},
+		[socket, isSocketConnected, pageId]
+	);
+
+	const emitTypingStop = useCallback(
+		(blockId) => {
+			if (socket && isSocketConnected) {
+				socket.emit("typing-stop", {
+					pageId,
+					blockId,
+					user: JSON.parse(localStorage.getItem("user") || "{}"),
+				});
+			}
+		},
+		[socket, isSocketConnected, pageId]
+	);
+
+	const emitCursorMove = useCallback(
+		(blockId, position) => {
+			if (socket && isSocketConnected) {
+				socket.emit("cursor-move", {
+					pageId,
+					blockId,
+					position,
+					user: JSON.parse(localStorage.getItem("user") || "{}"),
+				});
+			}
+		},
+		[socket, isSocketConnected, pageId]
+	);
+
+	// Get typing status for a specific block
+	const getTypingUsersForBlock = useCallback(
+		(blockId) => {
+			const typingUsers = [];
+			for (const [userId, data] of isTyping.entries()) {
+				if (data.blockId === blockId) {
+					typingUsers.push({
+						userId,
+						user: data.user,
+						timestamp: data.timestamp,
+					});
+				}
+			}
+			return typingUsers;
+		},
+		[isTyping]
+	);
+
+	// Get cursors for a specific block
+	const getCursorsForBlock = useCallback(
+		(blockId) => {
+			const blockCursors = [];
+			for (const [userId, data] of cursors.entries()) {
+				if (data.blockId === blockId) {
+					blockCursors.push({
+						userId,
+						user: data.user,
+						position: data.position,
+						timestamp: data.timestamp,
+					});
+				}
+			}
+			return blockCursors;
+		},
+		[cursors]
+	);
+
+	// Format recent activity for display
+	const getFormattedActivity = useCallback(() => {
+		return recentActivity.slice(0, 10).map((activity) => {
+			const timeAgo = formatTimeAgo(activity.timestamp);
+			const userName =
+				activity.user?.name ||
+				activity.user?.username ||
+				`User ${activity.userId}`;
+
+			let action = "updated";
+			switch (activity.type) {
+				case "add":
+					action = "added";
+					break;
+				case "delete":
+					action = "deleted";
+					break;
+				case "reorder":
+					action = "reordered";
+					break;
+				case "update":
+					action = "updated";
+					break;
+			}
+
 			return {
-				...block,
-				children: block.children.map((child) =>
-					updateBlockContent(child, targetId, content)
-				),
+				...activity,
+				displayText: `${userName} ${action} a block`,
+				timeAgo,
 			};
-		}
-		return block;
-	};
-
-	const emitPageUpdate = useCallback(
-		(blocks, operation, blockId = null) => {
-			if (!socket || !isConnected) return;
-
-			const updateData = {
-				pageId,
-				blocks,
-				operation,
-				blockId,
-				userId,
-				timestamp: Date.now(),
-			};
-
-			socket.emit("page-update", updateData);
-
-			// Update local state immediately for responsiveness
-			setPageState((prev) => ({
-				blocks,
-				version: prev.version + 1,
-			}));
-		},
-		[socket, pageId, userId, isConnected]
-	);
-
-	const selectBlock = useCallback(
-		(blockId) => {
-			if (!socket) return;
-			socket.emit("block-select", { pageId, blockId, action: "select" });
-		},
-		[socket, pageId]
-	);
-
-	const deselectBlock = useCallback(
-		(blockId) => {
-			if (!socket) return;
-			socket.emit("block-select", { pageId, blockId, action: "deselect" });
-		},
-		[socket, pageId]
-	);
-
-	const updateCursor = useCallback(
-		(x, y) => {
-			if (!socket) return;
-			socket.emit("cursor-move", { pageId, x, y });
-		},
-		[socket, pageId]
-	);
-
-	const emitTextEdit = useCallback(
-		(blockId, content, caretPosition) => {
-			if (!socket) return;
-			socket.emit("text-edit", { pageId, blockId, content, caretPosition });
-		},
-		[socket, pageId]
-	);
+		});
+	}, [recentActivity]);
 
 	return {
-		pageState,
-		activeUsers,
-		selectedBlocks,
+		// Connection state
+		connectedUsers,
+		isSocketConnected,
+
+		// Real-time indicators
+		isTyping,
 		cursors,
-		isConnected,
-		emitPageUpdate,
-		selectBlock,
-		deselectBlock,
-		updateCursor,
-		emitTextEdit,
+		recentActivity: getFormattedActivity(),
+
+		// Helper functions
+		getTypingUsersForBlock,
+		getCursorsForBlock,
+
+		// Emit functions
+		emitTypingStart,
+		emitTypingStop,
+		emitCursorMove,
+
+		// Stats
+		collaboratorCount: connectedUsers.length,
+		hasActiveCollaborators: connectedUsers.length > 1,
 	};
 };
+
+// Helper function to format time ago
+function formatTimeAgo(timestamp) {
+	const now = Date.now();
+	const diff = now - timestamp;
+
+	if (diff < 1000) return "just now";
+	if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
+	if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+	if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+	return `${Math.floor(diff / 86400000)}d ago`;
+}

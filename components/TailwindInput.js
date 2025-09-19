@@ -150,16 +150,16 @@ const TailwindInput = ({
 				content={
 					<ul
 						id="suggestion-list"
-						className="max-h-60 overflow-y-auto bg-primary-200 text-primary-800 rounded shadow-md"
+						className="max-h-60 overflow-y-auto lite-scrollbar bg-bg text-text rounded shadow-md"
 						role="listbox">
 						{suggestions.map((suggestion, index) => (
 							<li
 								key={index}
 								ref={index === activeSuggestionIndex ? activeSuggestionRef : null}
 								onClick={() => handleSuggestionClick(suggestion)}
-								className={`p-2 cursor-pointer text-[11px] ${index === activeSuggestionIndex
-									? "bg-primary-600 text-white"
-									: "hover:bg-primary-600 hover:text-white"
+								className={`p-2 py-1.5 cursor-pointer text-[11px] mb-0.5 last:mb-0 ${index === activeSuggestionIndex
+									? "bg-bg-light text-text"
+									: "hover:bg-bg-light hover:text-text"
 									}`}
 								aria-selected={index === activeSuggestionIndex}
 								role="option">

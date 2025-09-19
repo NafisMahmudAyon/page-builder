@@ -42,23 +42,6 @@ export const Heading = ({
     }
   };
   const TagName = tagName
-  // const getComponent = (): React.ElementType => {
-  //   switch (variant) {
-  //     case 'h1':
-  //     case 'h2':
-  //     case 'h3':
-  //     case 'h4':
-  //     case 'h5':
-  //     case 'h6':
-  //       return variant
-  //     case 'display1':
-  //       return 'h1'
-  //     case 'display2':
-  //       return 'h1'
-  //     default:
-  //       return 'p'
-  //   }
-  // }
 
   const getStyles = () => {
     switch (variant ?? tagName) {

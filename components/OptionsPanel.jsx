@@ -18,9 +18,7 @@ import { cn } from "./utils/cn";
 
 const OptionsPanel = () => {
 	const { selected, setSelected, selectedType, setSelectedType } = useEditor();
-	console.log(selected);
 const { isOpen2, closeSidebar2 } = useSidebar()
-console.log(isOpen2)
 	return (
 		<div className="relative">
 			<Sidebar

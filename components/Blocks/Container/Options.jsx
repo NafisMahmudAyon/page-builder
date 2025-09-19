@@ -29,12 +29,12 @@ export const Options = () => {
       <DropDownData
         label="Tag Name"
         options={[
-          { label: 'H1', value: 'h1' },
-          { label: 'H2', value: 'h2' },
-          { label: 'H3', value: 'h3' },
-          { label: 'H4', value: 'h4' },
-          { label: 'H5', value: 'h5' },
-          { label: 'H6', value: 'h6' },
+          { label: 'Div', value: 'div' },
+          { label: 'Section', value: 'section' },
+          { label: 'Article', value: 'article' },
+          // { label: 'H4', value: 'h4' },
+          // { label: 'H5', value: 'h5' },
+          // { label: 'H6', value: 'h6' },
         ]}
         value={selected?.options?.block?.tagName || ''} // Accessing tagName correctly
         update={(value) => handleOptionChange('tagName', value)} // Passing tagName as key

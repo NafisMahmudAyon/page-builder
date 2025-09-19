@@ -1,14 +1,20 @@
-'use client'
-import { createContext, useContext, useEffect, useState } from "react";
-import { templates } from "./templates";
+"use client";
 import { usePathname } from "next/navigation";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
+import { io } from "socket.io-client";
+import { templates } from "./templates";
 
+const EditorContext = createContext(null);
 
-const EditorContext = createContext(null)
+let socket;
 
-export const EditorProvider = ({
-	children,
-}) => {
+export const EditorProvider = ({ children }) => {
 	const path = usePathname();
 	const [selected, setSelected] = useState(null);
 	const [selectedType, setSelectedType] = useState(null);
@@ -69,7 +75,119 @@ export const EditorProvider = ({
 	]);
 	const [responsiveBlock, setResponsiveBlock] = useState(blocks);
 	const [draggedTemplate, setDraggedTemplate] = useState(null);
-	const [loading, setLoading] = useState(true)
+	const [loading, setLoading] = useState(true);
+	const [connectedUsers, setConnectedUsers] = useState([]);
+	const [isSocketConnected, setIsSocketConnected] = useState(false);
+	const [lastUpdateSource, setLastUpdateSource] = useState("local"); // 'local' or 'socket'
+
+	// Socket connection setup
+	useEffect(() => {
+		if (!pageId) return;
+
+		const token = localStorage.getItem("token");
+
+		// Initialize socket connection
+		socket = io(
+			process.env.NEXT_PUBLIC_BACKEND_URL ||
+				"https://page-builder-backend.onrender.com",
+			{
+				withCredentials: true,
+				auth: {
+					token: token,
+				},
+			}
+		);
+
+		// Connection events
+		socket.on("connect", () => {
+			console.log("✅ Socket connected");
+			setIsSocketConnected(true);
+		});
+
+		socket.on("disconnect", () => {
+			console.log("❌ Socket disconnected");
+			setIsSocketConnected(false);
+		});
+
+		socket.on("connection-confirmed", (data) => {
+			console.log("✅ Connected as:", data);
+		});
+
+		// Join the page room
+		socket.emit("join-page", { pageId, requestSync: true });
+
+		// Handle initial page state sync
+		socket.on("page-state-sync", (state) => {
+			console.log("📥 Page state synced:", state);
+			if (state.blocks && Array.isArray(state.blocks)) {
+				setLastUpdateSource("socket");
+				setBlocks(state.blocks);
+			}
+		});
+
+		// Handle real-time page updates from other users
+		socket.on("page-updated", (update) => {
+			console.log("📥 Page updated by another user:", update);
+			if (update.blocks && Array.isArray(update.blocks)) {
+				setLastUpdateSource("socket");
+				setBlocks(update.blocks);
+			}
+		});
+
+		// Handle connected users updates
+		socket.on("users-updated", (users) => {
+			console.log("👥 Active users:", users);
+			setConnectedUsers(users);
+		});
+
+		// Handle save confirmations
+		socket.on("page-saved", (data) => {
+			console.log("💾 Page saved:", data);
+		});
+
+		// Cleanup on unmount
+		return () => {
+			if (socket) {
+				socket.emit("leave-page", pageId);
+				socket.disconnect();
+			}
+		};
+	}, [pageId]);
+
+	// Emit changes to other users when blocks update locally
+	const emitBlocksUpdate = useCallback(
+		(newBlocks, operation = "edit", blockId = null, metadata = {}) => {
+			if (socket && isSocketConnected && lastUpdateSource === "local") {
+				console.log("📤 Emitting page update:", { operation, blockId });
+				socket.emit("page-update", {
+					pageId,
+					blocks: newBlocks,
+					operation,
+					blockId,
+					metadata: {
+						...metadata,
+						timestamp: Date.now(),
+						user: JSON.parse(localStorage.getItem("user") || "{}")?.userId,
+					},
+				});
+			}
+		},
+		[pageId, isSocketConnected, lastUpdateSource]
+	);
+
+	// Enhanced setBlocks with socket integration
+	const setBlocksWithSocket = useCallback(
+		(newBlocks, operation = "edit", blockId = null, metadata = {}) => {
+			setLastUpdateSource("local");
+			setBlocks(newBlocks);
+
+			// Emit to other users after a short delay to batch rapid changes
+			setTimeout(() => {
+				emitBlocksUpdate(newBlocks, operation, blockId, metadata);
+			}, 100);
+		},
+		[emitBlocksUpdate]
+	);
 
 	useEffect(() => {
 		const updateClassNames = (blocks) => {
@@ -83,7 +201,7 @@ export const EditorProvider = ({
 						.replace(/\bxl:/g, "@xl:")
 						.replace(/\b2xl:/g, "@2xl:")
 						.replace(/\b3xl:/g, "@3xl:")
-						.trim(); // Remove extra spaces if needed
+						.trim();
 
 					block = {
 						...block,
@@ -107,6 +225,7 @@ export const EditorProvider = ({
 		};
 		setResponsiveBlock(updateClassNames(blocks));
 	}, [responsive, blocks]);
+
 	const findBlockById = (blocks, id) => {
 		for (const block of blocks) {
 			if (block.id === id) {
@@ -139,35 +258,36 @@ export const EditorProvider = ({
 
 		return { newBlocks: traverse(blocks), removedItem };
 	};
+
 	const handleBlockUpdate = (updatedList, parentId = null) => {
+		setLastUpdateSource("local");
 		setBlocks((prevBlocks) => {
 			let newBlocks = [...prevBlocks];
 			updatedList = updatedList.map((item) => {
-				// If the item exists elsewhere in the tree, remove it first
 				const searchResult = findAndRemoveItem(newBlocks, item.id);
 
 				if (searchResult.removedItem) {
 					newBlocks = searchResult.newBlocks;
-					// Preserve the original item's properties while updating parent_id
 					return {
 						...searchResult.removedItem,
 						parent_id: parentId,
 					};
 				}
 
-				// If the item wasn't found elsewhere, it's new to this location
 				return {
 					...item,
 					parent_id: parentId,
 				};
 			});
 
-			// If this is a top-level update, return the new list
 			if (parentId === null) {
+				// Emit the update for reordering at root level
+				setTimeout(() => {
+					emitBlocksUpdate(updatedList, "reorder", null, { parentId });
+				}, 100);
 				return updatedList;
 			}
 
-			// Otherwise, find the parent container and update its children
 			const updateChildren = (blocks) => {
 				return blocks.map((block) => {
 					if (block.id === parentId) {
@@ -183,7 +303,14 @@ export const EditorProvider = ({
 				});
 			};
 
-			return updateChildren(prevBlocks);
+			const finalBlocks = updateChildren(prevBlocks);
+
+			// Emit the update for reordering within container
+			setTimeout(() => {
+				emitBlocksUpdate(finalBlocks, "reorder", parentId, { parentId });
+			}, 100);
+
+			return finalBlocks;
 		});
 	};
 
@@ -210,6 +337,7 @@ export const EditorProvider = ({
 			label: template.label,
 		};
 
+		setLastUpdateSource("local");
 		setBlocks((prevBlocks) => {
 			const addToParent = (items) =>
 				items.map((item) => {
@@ -225,20 +353,26 @@ export const EditorProvider = ({
 					return item;
 				});
 
-			return parentId === null
-				? [...prevBlocks, newItem]
-				: addToParent(prevBlocks);
+			const newBlocks =
+				parentId === null ? [...prevBlocks, newItem] : addToParent(prevBlocks);
+
+			// Emit the addition
+			setTimeout(() => {
+				emitBlocksUpdate(newBlocks, "add", newItem.id, {
+					parentId,
+					template: template.type,
+				});
+			}, 100);
+
+			return newBlocks;
 		});
 
-		// Automatically set the newly added block as selected
 		setSelected(newItem);
 	};
 
-	// Recursive function to update a block or its children
 	const onChangeUpdateBlockOptions = (blocks, blockId, key, value) => {
-		return blocks.map((block) => {
+		const updatedBlocks = blocks.map((block) => {
 			if (block.id === blockId) {
-				// Update the block options
 				return {
 					...block,
 					options: {
@@ -251,7 +385,6 @@ export const EditorProvider = ({
 				};
 			}
 
-			// If the block has children, recursively update them
 			if (block.children && block.children.length > 0) {
 				return {
 					...block,
@@ -264,28 +397,43 @@ export const EditorProvider = ({
 				};
 			}
 
-			// Return the block unchanged if no match
 			return block;
 		});
+
+		// Update local state and emit to other users
+		setLastUpdateSource("local");
+		setBlocks(updatedBlocks);
+
+		setTimeout(() => {
+			emitBlocksUpdate(updatedBlocks, "update", blockId, {
+				field: key,
+				value:
+					typeof value === "string" ? value.substring(0, 100) + "..." : value, // Truncate for metadata
+			});
+		}, 100);
+
+		return updatedBlocks;
 	};
 
-  const handleSave = async () => {
+	const handleSave = async () => {
 		try {
 			const user = JSON.parse(localStorage.getItem("user"));
-			console.log(user);
 			const pageData = {
 				name,
 				slug,
-				status : "draft",
+				status: "draft",
 				page_data: { blocks },
 				user_id: user?.userId,
 			};
-		const pageId = path.split("/")[2];
-			const endpoint = pageId === null ? "pages" : `pages/${pageId}`;
-			const method = pageId === null ? "post" : "put";
-			console.log(pageId)
 
-			const response = await fetch(`http://localhost:5000/api/${endpoint}`, {
+			const currentPageId = path.split("/")[2];
+			const endpoint =
+				currentPageId === "new" ? "pages" : `pages/${currentPageId}`;
+			const method = currentPageId === "new" ? "post" : "put";
+			const url =
+				process.env.NEXT_PUBLIC_BACKEND_URL ||
+				"https://page-builder-backend.onrender.com";
+			const response = await fetch(`${url}/api/${endpoint}`, {
 				method,
 				headers: {
 					"Content-Type": "application/json",
@@ -295,54 +443,81 @@ export const EditorProvider = ({
 			});
 
 			const result = await response.json();
-			console.log(result)
 
 			if (result.error) throw result.error;
 
 			if (result.data) {
 				setPageId(result.data.id);
 			}
+
+			// Emit save event to notify other users
+			if (socket && isSocketConnected) {
+				socket.emit("page-save", {
+					pageId: pageId || result.data?.id,
+					blocks,
+					metadata: {
+						savedBy: user?.userId,
+						timestamp: Date.now(),
+					},
+				});
+			}
+
+			console.log("✅ Page saved successfully");
 		} catch (error) {
-			console.error("Error saving page:", error);
+			console.error("❌ Error saving page:", error);
 		}
 	};
 
-  useEffect(() => {
+	useEffect(() => {
 		const fetchPageData = async () => {
-			setLoading(true)
-			if (pageId) {
-				console.log(pageId)
-				const response = await fetch(`http://localhost:5000/api/pages/${pageId}`, {
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${localStorage.getItem("token")}`,
-					},
-				});
+			setLoading(true);
+			if (pageId && pageId !== "new") {
+				try {
+					const url =
+						process.env.NEXT_PUBLIC_BACKEND_URL ||
+						"https://page-builder-backend.onrender.com";
+					const response = await fetch(`${url}/api/pages/${pageId}`, {
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${localStorage.getItem("token")}`,
+						},
+					});
 
-				const data = await response.json();
-				console.log(data)
+					const data = await response.json();
 
-				if (data.error) {
-					console.error("Error fetching page:", data.error);
-					return;
-				}
-
-				if (data) {
-					setName(data.name);
-					setSlug(data.slug);
-					setStatus(data.status);
-					if (data.page_data?.blocks) {
-						setBlocks(data.page_data.blocks);
+					if (data.error) {
+						console.error("Error fetching page:", data.error);
+						return;
 					}
+
+					if (data) {
+						setName(data.name);
+						setSlug(data.slug);
+						setStatus(data.status);
+						if (data.page_data?.blocks) {
+							setLastUpdateSource("socket"); // Prevent emitting when loading initial data
+							setBlocks(data.page_data.blocks);
+						}
+					}
+				} catch (error) {
+					console.error("Error fetching page data:", error);
 				}
 			}
-			setLoading(false)
+			setLoading(false);
 		};
 
 		fetchPageData();
 	}, [pageId]);
 
-
+	// Reset lastUpdateSource after socket updates are processed
+	useEffect(() => {
+		if (lastUpdateSource === "socket") {
+			const timer = setTimeout(() => {
+				setLastUpdateSource("local");
+			}, 200);
+			return () => clearTimeout(timer);
+		}
+	}, [lastUpdateSource]);
 
 	return (
 		<EditorContext.Provider
@@ -352,7 +527,7 @@ export const EditorProvider = ({
 				selectedType,
 				setSelectedType,
 				blocks,
-				setBlocks,
+				setBlocks: setBlocksWithSocket,
 				elementTemplates,
 				draggedTemplate,
 				setDraggedTemplate,
@@ -374,11 +549,15 @@ export const EditorProvider = ({
 				setResponsiveBlock,
 				findBlockById,
 				loading,
+				// Socket-related states
+				connectedUsers,
+				isSocketConnected,
+				socket,
 			}}>
 			{children}
 		</EditorContext.Provider>
 	);
-}
+};
 
 export default function useEditor() {
 	const context = useContext(EditorContext);

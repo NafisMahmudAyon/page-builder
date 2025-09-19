@@ -179,7 +179,7 @@ const Popover = ({
   }, [onHover]);
 
   const getPopoverStyles = () => {
-    const baseStyles = 'fixed bg-white rounded-lg shadow-lg border border-gray-200';
+    const baseStyles = 'fixed bg-white rounded-lg shadow-lg border border-border overflow-hidden';
 
     const positionStyles = {
       top: '-translate-x-1/2',

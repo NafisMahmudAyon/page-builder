@@ -1,119 +1,145 @@
 "use client";
 
-import { LayoutPanelLeft, Settings } from "lucide-react";
+import { LayoutPanelLeft, Settings, Users, Wifi, WifiOff } from "lucide-react";
+import Script from "next/script";
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import { Button, Spinner } from "../../../components/aspect-ui";
 import { SidebarToggleButton } from "../../../components/aspect-ui/Sidebar/SidebarToggleButton";
 import LeftBar from "../../../components/LeftBar";
 import MainContent from "../../../components/MainContent";
 import OptionsPanel from "../../../components/OptionsPanel";
 import useEditor from "../../../context/EditorContext";
-import { DotLoader } from "../../../components/Loader";
-import { Spinner } from "../../../components/aspect-ui";
-import Script from "next/script";
-
-let socket;
+import { useCollaboration } from "../../../hooks/useCollaboration";
 
 export default function ClientPage({ id }) {
-	const [content, setContent] = useState("");
-	const [connectedUsers, setConnectedUsers] = useState([]);
 	const pageId = id;
-	const { setPageId, loading } = useEditor();
+	const { setPageId, loading, connectedUsers, isSocketConnected, blocks } =
+		useEditor();
+		console.log(connectedUsers)
+
+	const [showCollaborators, setShowCollaborators] = useState(false);
+	const { recentActivity } = useCollaboration()
 
 	useEffect(() => {
 		setPageId(pageId);
-	}, [pageId]);
+	}, [pageId, setPageId]);
 
+	// Auto-save functionality (optional)
 	useEffect(() => {
-		// Connect with auth token
-		console.log(localStorage.getItem("token"));
-		const token = localStorage.getItem("token");
-		console.log(token);
-		socket = io(
-			process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
-			{
-				withCredentials: true,
-				auth: {
-					token: token, // 👈 pass JWT
-				},
-			}
-		);
+		if (!blocks || blocks.length === 0) return;
 
-		// Confirm connection
-		socket.on("connection-confirmed", (data) => {
-			console.log("✅ Connected as:", data);
-		});
+		const autoSaveTimer = setTimeout(() => {
+			// You can implement auto-save here if needed
+			console.log("Auto-save triggered");
+		}, 5000); // Auto-save after 5 seconds of inactivity
 
-		// Join page
-		socket.emit("join-page", { pageId, requestSync: true });
+		return () => clearTimeout(autoSaveTimer);
+	}, [blocks]);
 
-		// Initial page state sync
-		socket.on("page-state-sync", (state) => {
-			console.log("📥 Page state synced:", state);
-			setContent(JSON.stringify(state.blocks, null, 2)); // for demo: show blocks as text
-		});
+	const ConnectionStatus = () => (
+		<div>
+			{isSocketConnected ? (
+				<>
+					<Wifi className="w-4 h-4 text-green-500" />
+				</>
+			) : (
+				<>
+					<WifiOff className="w-4 h-4 text-red-500" />
+				</>
+			)}
+		</div>
+	);
 
-		// Page updated by others
-		socket.on("page-updated", (update) => {
-			console.log("📥 Page updated:", update);
-			setContent(JSON.stringify(update.blocks, null, 2));
-		});
+	const CollaboratorsList = () => (
+		<div
+			className={`fixed bottom-4 left-4 z-100 bg-bg-dark border border-border rounded-lg shadow-lg p-3 min-w-48 transition-all duration-200 text-text ${
+				showCollaborators ? "opacity-100 visible" : "opacity-0 invisible"
+			}`}>
+			<h3 className="font-medium text-text-muted mb-2">Active Collaborators</h3>
+			{connectedUsers.length > 0 ? (
+				<div className="space-y-2">
+					{connectedUsers.map((user, index) => (
+						<div key={user.id || index} className="flex items-center gap-2">
+							<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+							<span className="text-sm text-text">
+								{user.name || user.userId || `User ${index + 1}`}
+							</span>
+						</div>
+					))}
+				</div>
+			) : (
+				<p className="text-sm text-gray-500">You're working alone</p>
+			)}
+		</div>
+	);
 
-		// User list updates
-		socket.on("users-updated", (users) => {
-			console.log("👥 Active users:", users);
-			setConnectedUsers(users);
-		});
-
-		// Saved confirmation
-		socket.on("page-saved", (data) => {
-			console.log("💾 Page saved:", data);
-		});
-
-		// Cleanup on unmount
-		return () => {
-			socket.emit("leave-page", pageId);
-			socket.disconnect();
-		};
-	}, [pageId]);
-
-	// Send updates when user types
-	const handleChange = (e) => {
-		const text = e.target.value;
-		setContent(text);
-
-		// for demo, treat text as a single "block"
-		const blocks = [{ id: "block-1", type: "text", content: text }];
-
-		socket.emit("page-update", {
-			pageId,
-			blocks,
-			operation: "edit",
-			blockId: "block-1",
-			metadata: { field: "content" },
-		});
-	};
+	const CollaboratorsButton = () => (
+		<Button variant="outline"
+			onClick={() => setShowCollaborators(!showCollaborators)}
+			className={`fixed bottom-4 right-4 z-50 rounded-lg text-sm font-medium transition-colors ${
+				connectedUsers.length > 0
+					? "text-text"
+					: "text-text-muted"
+			}`}>
+			<Users className="w-4 h-4" />
+			<span>{connectedUsers.length}</span>
+			<ConnectionStatus />
+		</Button>
+	);
 
 	return (
 		<>
-			<div className="flex h-full justify-between">
+			<div className="flex h-full justify-between relative">
 				{loading && (
 					<div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-bg-dark/50 z-50 backdrop-blur-sm">
-						<Spinner />
-						Loading...
+						<div className="flex flex-col items-center gap-4">
+							<Spinner className="w-8 h-8" />
+							<span className="text-white font-medium">Loading editor...</span>
+						</div>
 					</div>
 				)}
+				{/* Connection Status Indicator */}
+				{/* <ConnectionStatus /> */}
+				{/* Collaborators Button */}
+				<CollaboratorsButton />
+				{/* Collaborators List */}
+				<CollaboratorsList />
+				{/* <CollaborationIndicators /> */}
+				{/* Sidebar Toggle for Mobile */}
 				<div className="lg:hidden">
 					<SidebarToggleButton icon={<LayoutPanelLeft />} />
 				</div>
+				{/* Main Editor Layout */}
 				<LeftBar />
 				<MainContent />
 				<OptionsPanel />
+				{/* Options Panel Toggle for Mobile */}
 				<div className="lg:hidden">
 					<SidebarToggleButton id={2} icon={<Settings />} />
 				</div>
+				{/* Real-time Activity Indicator */}
+				{isSocketConnected && connectedUsers.length > 1 && (
+					<div className="fixed bottom-4 right-4 z-40 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+						<div className="flex items-center gap-2">
+							<div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+							<span className="text-sm text-blue-700 font-medium">
+								Live collaboration active
+							</span>
+						</div>
+					</div>
+				)}
 			</div>
+
+			{/* Tailwind Browser Support */}
 			<Script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" />
+
+			{/* Click outside to close collaborators list */}
+			{showCollaborators && (
+				<div
+					className="fixed inset-0 z-30"
+					onClick={() => setShowCollaborators(false)}
+				/>
+			)}
 		</>
 	);
 }
