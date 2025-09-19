@@ -17,7 +17,6 @@ export default function ClientPage({ id }) {
 		useEditor();
 
 	const [showCollaborators, setShowCollaborators] = useState(false);
-	const { recentActivity } = useCollaboration()
 
 	useEffect(() => {
 		setPageId(pageId);
