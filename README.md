@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Real-Time Collaborative Page Builder  
 
-## Getting Started
+A simplified real-time collaborative page builder.  
 
-First, run the development server:
+🔗 **Live Demo**: [https://page-builder.nafisbd.com/](https://page-builder.nafisbd.com/)  
+
+---
+
+## 🚀 Features  
+
+- Add dynamic blocks: **Text, Image, Container, Heading**  
+- Inline editing for text/heading  
+- Full drag & drop with resizing (responsive layout)  
+- Real-time collaboration with WebSockets (Node + Express + Socket.io backend)  
+- State managed with **React Context API**  
+- Dark/Light mode toggle  
+- Page structure saved as JSON and rendered dynamically  
+
+---
+
+## 🛠 Tech Stack  
+
+- **Next.js + React**  
+- **Context API** (state management)  
+- **Tailwind CSS** (styling)  
+- **Node.js + Express + Socket.io** (real-time backend)  
+
+---
+
+## 📂 Project Setup  
+
+### Frontend  
 
 ```bash
+git clone https://github.com/NafisMahmudAyon/page-builder.git
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Backend
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+git clone https://github.com/NafisMahmudAyon/page-builder-backend.git
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📖 Usage
 
-## Learn More
+- Open the app in the browser.
 
-To learn more about Next.js, take a look at the following resources:
+- Add, edit, resize, and reorder blocks.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Open in two browser windows to see real-time collaboration.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Switch between dark and light mode.
