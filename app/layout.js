@@ -1,5 +1,6 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
 
 const poppins = Poppins({
 	weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -13,9 +14,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="en" className="dark">
-			<body className={`${poppins.className} antialiased`}>{children}</body>
+		<html lang="en" suppressHydrationWarning>
+			<body className={`${poppins.className} antialiased`}>
+				<ThemeProvider attribute="class" defaultTheme="dark">{children}</ThemeProvider>
+			</body>
 		</html>
 	);
 }
+
+
 
