@@ -97,7 +97,7 @@ export const Alert = ({
           title='Close'
           aria-label='Close'
         >
-          <X className={cn(getCloseStyles())} />
+          {/* <X className={cn(getCloseStyles())} /> */}
         </span>
       )}
     </div>

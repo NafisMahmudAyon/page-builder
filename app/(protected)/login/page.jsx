@@ -1,5 +1,7 @@
 "use client";
 
+import { Card, Input, Button, Alert } from "@/components/aspect-ui";
+import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -59,25 +61,29 @@ const Page = () => {
 	};
 
 	return (
-		<div className="min-h-screen">
-			<h1>Login</h1>
-			<form onSubmit={handleSubmit}>
-				<input
-					type="text"
-					placeholder="Name"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-				/>
-				<input
-					type="email"
-					placeholder="Email"
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-				/>
-				<button type="submit" disabled={loading}>
-					{loading ? "Logging in..." : "Login"}
-				</button>
-			</form>
+		<div className="min-h-screen flex justify-center items-center">
+			<Card className="p-4">
+				<h1 className="text-2xl font-bold text-center">Login</h1>
+				<form onSubmit={handleSubmit} className="p-4 flex gap-4 flex-col">
+					<Input
+						type="text"
+						placeholder="Name"
+						value={name}
+						icon={<User />}
+						onChange={(e) => setName(e.target.value)}
+					/>
+					<Input
+						type="email"
+						placeholder="Email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+					/>
+					<Button variant="outline" type="submit" disabled={loading}>
+						{loading ? "Logging in..." : "Login"}
+					</Button>
+				</form>
+				<Alert type="info" >You can use any name and email</Alert>
+			</Card>
 		</div>
 	);
 };
