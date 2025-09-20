@@ -1,6 +1,7 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+import { Analytics } from "@vercel/analytics/next";
 
 const poppins = Poppins({
 	weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -16,11 +17,16 @@ export default function RootLayout({ children }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${poppins.className} antialiased`}>
-				<ThemeProvider attribute="class" defaultTheme="dark">{children}</ThemeProvider>
+				<ThemeProvider attribute="class" defaultTheme="dark">
+					{children}
+				</ThemeProvider>
+				<Analytics />
 			</body>
 		</html>
 	);
 }
+
+
 
 
 
